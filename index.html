@@ -204,8 +204,8 @@
 
             if(user && user.pass === pass) {
                 localStorage.setItem('nexus_current_user', JSON.stringify({email, ...user}));
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-pass').value = '';
+                document.getElementById('login-email').value = 'nexus@admin123';
+                document.getElementById('login-pass').value = '45';
                 document.getElementById('login-error').classList.add('hidden');
                 navigate('live');
                 render();

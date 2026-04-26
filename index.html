@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus PES Legends | Live Auction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0B0F19; color: #E2E8F0; }
+        .neon-text { text-shadow: 0 0 10px #38BDF8, 0 0 20px #38BDF8; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-gray-900 border-b border-gray-800 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('live')">
+                    <span class="text-2xl font-black text-sky-400 tracking-wider neon-text">NEXUS</span>
+                    <span class="text-sm font-bold text-gray-400 mt-1">PES LEGENDS</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <button onclick="navigate('live')" class="hover:text-sky-400 px-3 py-2 rounded-md font-medium transition">Live Auction</button>
+                        <button onclick="navigate('available')" class="hover:text-sky-400 px-3 py-2 rounded-md font-medium transition">Available Players</button>
+                        <button onclick="navigate('sold')" class="hover:text-sky-400 px-3 py-2 rounded-md font-medium transition">Sold & Squads</button>
+                    </div>
+                </div>
+                <div>
+                    <span id="user-info" class="text-sm font-bold text-sky-400 mr-4"></span>
+                    <button id="login-btn" onclick="navigate('login')" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-md font-bold transition shadow-[0_0_10px_rgba(56,189,248,0.4)]">Login</button>
+                    <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-md font-bold transition">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-8">
+        
+        <!-- LIVE AUCTION VIEW -->
+        <section id="view-live" class="space-y-6">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-black text-white uppercase tracking-widest mb-2">Live Bidding</h1>
+                <p class="text-gray-400">Watch the Nexus eFootball Auction live!</p>
+            </div>
+
+            <div id="no-auction" class="text-center py-20 bg-gray-900 rounded-xl border border-gray-800">
+                <h2 class="text-2xl text-gray-500 font-bold">No active auction at the moment.</h2>
+                <p class="text-gray-600 mt-2">Waiting for the admin to start bidding on a player...</p>
+            </div>
+
+            <div id="active-auction" class="hidden max-w-3xl mx-auto bg-gray-900 border border-sky-500/30 rounded-xl p-8 shadow-[0_0_30px_rgba(56,189,248,0.1)]">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <!-- Player Info -->
+                    <div class="text-center md:text-left flex-1">
+                        <span class="text-sky-400 text-sm font-bold tracking-widest uppercase mb-1 block">Currently on the block</span>
+                        <h2 id="live-player-name" class="text-4xl font-black text-white mb-2">Player Name</h2>
+                        <div class="flex items-center justify-center md:justify-start gap-4 mt-4">
+                            <span class="bg-gray-800 px-4 py-2 rounded-lg text-sm font-semibold">Rating: <span id="live-player-rating" class="text-green-400">90</span></span>
+                            <span class="bg-gray-800 px-4 py-2 rounded-lg text-sm font-semibold">Pos: <span id="live-player-pos" class="text-yellow-400">CF</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Bidding Info -->
+                    <div class="flex-1 bg-gray-950 p-6 rounded-xl border border-gray-800 text-center w-full">
+                        <p class="text-gray-400 text-sm mb-1 uppercase tracking-wide">Highest Bid</p>
+                        <div class="text-5xl font-black text-green-400 mb-2">🪙 <span id="live-current-bid">0</span></div>
+                        <p class="text-gray-300 font-medium">Team: <span id="live-highest-bidder" class="text-sky-400 font-bold">None</span></p>
+                        
+                        <!-- Captain Bidding Controls -->
+                        <div id="captain-controls" class="hidden mt-6 pt-6 border-t border-gray-800">
+                            <div class="flex gap-2">
+                                <input type="number" id="bid-amount" class="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Enter Bid amount">
+                                <button onclick="placeBid()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-2 rounded font-bold transition">BID</button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Controls -->
+                        <div id="admin-controls" class="hidden mt-6 pt-6 border-t border-gray-800">
+                            <button onclick="sellPlayer()" class="w-full bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded font-black uppercase tracking-wider transition">🔨 Sell to Highest Bidder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AVAILABLE PLAYERS VIEW -->
+        <section id="view-available" class="hidden space-y-6">
+            <h2 class="text-3xl font-black text-white uppercase tracking-wider border-b border-gray-800 pb-4">Available Players</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900 text-gray-400 text-sm uppercase tracking-wider border-b border-gray-800">
+                            <th class="p-4">Name</th>
+                            <th class="p-4">Position</th>
+                            <th class="p-4">OVR</th>
+                            <th class="p-4">Base Price</th>
+                            <th class="p-4 text-right admin-only hidden">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="available-players-list" class="divide-y divide-gray-800 bg-gray-900/50">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SOLD PLAYERS & SQUADS VIEW -->
+        <section id="view-sold" class="hidden space-y-6">
+            <h2 class="text-3xl font-black text-white uppercase tracking-wider border-b border-gray-800 pb-4">Sold Players & Squads</h2>
+            <div id="teams-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- LOGIN VIEW -->
+        <section id="view-login" class="hidden flex justify-center items-center py-20">
+            <div class="bg-gray-900 p-8 rounded-xl border border-gray-800 w-full max-w-md shadow-2xl">
+                <h2 class="text-2xl font-black text-white mb-6 text-center uppercase tracking-widest">Captain Login</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-400 text-sm mb-2">Email Address</label>
+                        <input type="email" id="login-email" class="w-full bg-gray-800 text-white rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="captain@nexus.com">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-sm mb-2">Password</label>
+                        <input type="password" id="login-pass" class="w-full bg-gray-800 text-white rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="••••••••">
+                    </div>
+                    <button onclick="login()" class="w-full bg-sky-600 hover:bg-sky-500 text-white px-4 py-3 rounded font-bold transition mt-4">Access Auction Panel</button>
+                    <p id="login-error" class="text-red-500 text-sm text-center hidden mt-2">Invalid Credentials</p>
+                </div>
+                
+                <div class="mt-6 p-4 bg-gray-950 rounded text-xs text-gray-500 border border-gray-800">
+                    <p class="font-bold text-gray-400 mb-1">Demo Credentials:</p>
+                    <p>Admin: admin@nexus.com / admin123</p>
+                    <p>Captain 1: cap1@nexus.com / cap123</p>
+                    <p>Captain 2: cap2@nexus.com / cap123</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. CONFIGURATION & MOCK DATABASE ---
+
+        const USERS = {
+            "admin@nexus.com": { role: "admin", team: "Administrator", pass: "admin123" },
+            "cap1@nexus.com": { role: "captain", team: "Team Alpha", pass: "cap123" },
+            "cap2@nexus.com": { role: "captain", team: "Team Beta", pass: "cap123" },
+            "cap3@nexus.com": { role: "captain", team: "Team Gamma", pass: "cap123" }
+        };
+
+        const INITIAL_PLAYERS =[
+            { id: 1, name: "K. Mbappé", pos: "CF", ovr: 97, basePrice: 500, status: "available", soldTo: null, soldPrice: null },
+            { id: 2, name: "L. Messi", pos: "RWF", ovr: 96, basePrice: 450, status: "available", soldTo: null, soldPrice: null },
+            { id: 3, name: "E. Haaland", pos: "CF", ovr: 95, basePrice: 400, status: "available", soldTo: null, soldPrice: null },
+            { id: 4, name: "Vini Jr", pos: "LWF", ovr: 93, basePrice: 350, status: "available", soldTo: null, soldPrice: null },
+            { id: 5, name: "K. De Bruyne", pos: "AMF", ovr: 94, basePrice: 380, status: "available", soldTo: null, soldPrice: null },
+            { id: 6, name: "V. van Dijk", pos: "CB", ovr: 90, basePrice: 200, status: "available", soldTo: null, soldPrice: null },
+            { id: 7, name: "T. Courtois", pos: "GK", ovr: 91, basePrice: 180, status: "available", soldTo: null, soldPrice: null }
+        ];
+
+        // --- 2. STATE MANAGEMENT (Using LocalStorage for cross-tab live sync) ---
+
+        function initDB() {
+            if (!localStorage.getItem('nexus_players')) {
+                localStorage.setItem('nexus_players', JSON.stringify(INITIAL_PLAYERS));
+            }
+            if (!localStorage.getItem('nexus_auction_state')) {
+                localStorage.setItem('nexus_auction_state', JSON.stringify({
+                    isActive: false,
+                    playerId: null,
+                    currentBid: 0,
+                    highestBidder: null
+                }));
+            }
+        }
+
+        function getPlayers() { return JSON.parse(localStorage.getItem('nexus_players')); }
+        function savePlayers(players) { localStorage.setItem('nexus_players', JSON.stringify(players)); }
+        
+        function getAuctionState() { return JSON.parse(localStorage.getItem('nexus_auction_state')); }
+        function saveAuctionState(state) { localStorage.setItem('nexus_auction_state', JSON.stringify(state)); render(); }
+
+        function getCurrentUser() { return JSON.parse(localStorage.getItem('nexus_current_user')); }
+
+        // Sync changes across browser tabs instantly!
+        window.addEventListener('storage', (e) => {
+            if(e.key === 'nexus_auction_state' || e.key === 'nexus_players') {
+                render();
+            }
+        });
+
+        // --- 3. CORE LOGIC ---
+
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const user = USERS[email];
+
+            if(user && user.pass === pass) {
+                localStorage.setItem('nexus_current_user', JSON.stringify({email, ...user}));
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-pass').value = '';
+                document.getElementById('login-error').classList.add('hidden');
+                navigate('live');
+                render();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('nexus_current_user');
+            navigate('live');
+            render();
+        }
+
+        function startAuction(playerId) {
+            const players = getPlayers();
+            const player = players.find(p => p.id === playerId);
+            if(player) {
+                saveAuctionState({
+                    isActive: true,
+                    playerId: player.id,
+                    currentBid: player.basePrice,
+                    highestBidder: "No Bids Yet"
+                });
+                navigate('live');
+            }
+        }
+
+        function placeBid() {
+            const user = getCurrentUser();
+            if(!user || user.role !== 'captain') return alert("Only Captains can bid!");
+            
+            const bidInput = document.getElementById('bid-amount');
+            const bidValue = parseInt(bidInput.value);
+            const state = getAuctionState();
+
+            if(bidValue <= state.currentBid) {
+                return alert("Bid must be higher than current bid: " + state.currentBid);
+            }
+
+            state.currentBid = bidValue;
+            state.highestBidder = user.team;
+            saveAuctionState(state);
+            bidInput.value = '';
+        }
+
+        function sellPlayer() {
+            const state = getAuctionState();
+            if(!state.isActive || state.highestBidder === "No Bids Yet") return alert("No valid bids to sell!");
+
+            const players = getPlayers();
+            const playerIndex = players.findIndex(p => p.id === state.playerId);
+            
+            players[playerIndex].status = "sold";
+            players[playerIndex].soldTo = state.highestBidder;
+            players[playerIndex].soldPrice = state.currentBid;
+            
+            savePlayers(players);
+            
+            // End auction
+            saveAuctionState({ isActive: false, playerId: null, currentBid: 0, highestBidder: null });
+            navigate('sold');
+        }
+
+        // --- 4. UI RENDERING & NAVIGATION ---
+
+        function navigate(viewId) {
+            ['view-live', 'view-available', 'view-sold', 'view-login'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            render();
+        }
+
+        function render() {
+            const user = getCurrentUser();
+            const state = getAuctionState();
+            const players = getPlayers();
+
+            // Setup Header Auth UI
+            if(user) {
+                document.getElementById('login-btn').classList.add('hidden');
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.getElementById('user-info').innerText = `${user.team} (${user.role})`;
+            } else {
+                document.getElementById('login-btn').classList.remove('hidden');
+                document.getElementById('logout-btn').classList.add('hidden');
+                document.getElementById('user-info').innerText = '';
+            }
+
+            // Render Live Auction View
+            if(state.isActive) {
+                document.getElementById('no-auction').classList.add('hidden');
+                document.getElementById('active-auction').classList.remove('hidden');
+                
+                const player = players.find(p => p.id === state.playerId);
+                document.getElementById('live-player-name').innerText = player.name;
+                document.getElementById('live-player-rating').innerText = player.ovr;
+                document.getElementById('live-player-pos').innerText = player.pos;
+                document.getElementById('live-current-bid').innerText = state.currentBid;
+                document.getElementById('live-highest-bidder').innerText = state.highestBidder;
+
+                // Controls visibility
+                document.getElementById('captain-controls').classList.add('hidden');
+                document.getElementById('admin-controls').classList.add('hidden');
+
+                if(user && user.role === 'captain') {
+                    document.getElementById('captain-controls').classList.remove('hidden');
+                    document.getElementById('bid-amount').min = state.currentBid + 10;
+                    document.getElementById('bid-amount').placeholder = `Min bid: ${state.currentBid + 10}`;
+                }
+                if(user && user.role === 'admin') {
+                    document.getElementById('admin-controls').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('no-auction').classList.remove('hidden');
+                document.getElementById('active-auction').classList.add('hidden');
+            }
+
+            // Render Available Players
+            const tbody = document.getElementById('available-players-list');
+            tbody.innerHTML = '';
+            
+            // Toggle Admin Action column
+            const adminCols = document.querySelectorAll('.admin-only');
+            adminCols.forEach(col => user && user.role === 'admin' ? col.classList.remove('hidden') : col.classList.add('hidden'));
+
+            players.filter(p => p.status === 'available').forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800 transition";
+                
+                let actionBtn = '';
+                if(user && user.role === 'admin') {
+                    actionBtn = `<td class="p-4 text-right"><button onclick="startAuction(${p.id})" class="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 text-xs font-bold rounded">START AUCTION</button></td>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-white">${p.name}</td>
+                    <td class="p-4"><span class="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs font-bold">${p.pos}</span></td>
+                    <td class="p-4 text-green-400 font-bold">${p.ovr}</td>
+                    <td class="p-4 text-yellow-400 font-bold">🪙 ${p.basePrice}</td>
+                    ${actionBtn}
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Render Sold Players / Squads
+            const teamsGrid = document.getElementById('teams-grid');
+            teamsGrid.innerHTML = '';
+            
+            // Extract unique teams
+            const soldPlayers = players.filter(p => p.status === 'sold');
+            const teams =[...new Set(soldPlayers.map(p => p.soldTo))];
+
+            if(teams.length === 0) {
+                teamsGrid.innerHTML = '<p class="text-gray-500 italic">No players have been sold yet.</p>';
+            }
+
+            teams.forEach(team => {
+                const teamPlayers = soldPlayers.filter(p => p.soldTo === team);
+                const totalSpent = teamPlayers.reduce((sum, p) => sum + p.soldPrice, 0);
+                
+                let squadHtml = `
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
+                        <h3 class="text-xl font-black text-sky-400">${team}</h3>
+                        <span class="text-sm font-bold text-gray-400">Total Spent: <span class="text-yellow-400">🪙 ${totalSpent}</span></span>
+                    </div>
+                    <ul class="space-y-2">
+                `;
+                
+                teamPlayers.forEach(p => {
+                    squadHtml += `
+                        <li class="flex justify-between items-center bg-gray-950 p-3 rounded">
+                            <span class="font-bold text-white">${p.name} <span class="text-xs text-gray-500 bg-gray-800 px-1 rounded ml-1">${p.pos}</span></span>
+                            <span class="text-green-400 font-bold text-sm">🪙 ${p.soldPrice}</span>
+                        </li>
+                    `;
+                });
+
+                squadHtml += `</ul></div>`;
+                teamsGrid.innerHTML += squadHtml;
+            });
+        }
+
+        // Initialize App
+        initDB();
+        render();
+    </script>
+</body>
+</html>
